@@ -1,0 +1,130 @@
+---
+# tasks file for docker-host
+# https://docs.docker.com/engine/installation/linux/docker-ce/centos/
+
+- name: remove ansible
+  # Ansible is removed because it has a requirement for PyYAML, which the YUM package only does version 3.10,
+  # and the Ansible docker-service module requires >= 3.11.
+  become: yes
+  yum:
+    state: absent
+    name: ansible
+
+- name: remove PyYAML
+  become: yes
+  yum:
+    state: absent
+    name: python-yaml
+
+- name: install pip PyYAML
+  become: yes
+  pip:
+    name: PyYAML
+    state: latest
+
+- name: install pip docker-compose
+  # Version 1.25.0 doesn't install with python2.
+  become: yes
+  pip:
+    name: docker-compose==1.24.1
+
+- name: disable firewalld
+  # https://docs.docker.com/v1.6/installation/centos/
+  become: yes
+  service:
+    name: firewalld
+    state: stopped
+    enabled: no
+  notify:
+    - restart docker
+
+- name: install docker dependencies
+  become: yes
+  yum:
+    name:
+      - yum-utils
+      - device-mapper-persistent-data
+      - lvm2
+    state: latest
+
+- name: add docker yum repository
+  become: yes
+  yum_repository:
+    name: docker-ce-stable
+    description: public stable docker-ce repo
+    baseurl: "{{ docker_host_ce_repo }}"
+    gpgcheck: yes
+    gpgkey: "{{ docker_host_ce_repo_gpgkey }}"
+
+- name: install docker-ce
+  become: yes
+  yum:
+    name: docker-ce
+    state: present
+  notify:
+    - restart docker
+  when: ansible_distribution == "CentOS" and ansible_distribution_major_version <= '7'
+
+# https://linuxconfig.org/how-to-install-docker-in-rhel-8
+- name: install docker-ce nobest
+  become: yes
+  shell: yum install --nobest docker-ce -y
+  notify:
+    - restart docker
+  when: ansible_distribution == "CentOS" and ansible_distribution_major_version > '7'
+
+- name: ensure docker is enabled at boot
+  become: yes
+  service:
+    name: docker
+    enabled: yes
+
+- name: create docker group
+  become: yes
+  group:
+    name: docker
+    state: present
+  notify:
+    - restart docker
+
+- name: add current user to docker group
+  become: yes
+  user:
+    name: "{{ ansible_user_id }}"
+    groups: wheel,docker
+    append: yes
+  # This module is always changed. It's causing unnecessary restarts of docker.
+  #notify:
+  #  - restart docker
+
+- name: check for config file
+  stat: path=/etc/docker/daemon.json
+  register: p
+
+- name: start the service if nothing has been configured
+  # If you configure docker before letting it run once, a start after configure will fail.
+  become: yes
+  service:
+    name: docker
+    state: started
+  when: not p.stat.exists
+
+- name: create /etc/docker/
+  become: yes
+  file:
+    path: /etc/docker/
+    state: directory
+    mode: 0755
+
+- name: configure docker
+  become: yes
+  template:
+    src: templates/daemon.json.j2
+    dest: /etc/docker/daemon.json
+    owner: root
+    group: root
+  notify:
+    - restart docker
+
+# This document assumes that the drives are already properly allocated for docker needs.
+# If this needs addressed, it should be done by Packer/Terraform, not Ansible.
