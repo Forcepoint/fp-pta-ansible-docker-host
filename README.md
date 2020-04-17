@@ -10,7 +10,8 @@ None
 
 ### REQUIRED
 
-None
+As of this writing (2020-01-29), this role does not apply with the gnome role as
+you'll get a conflict with urllib3 being applied by pip and by yum.
 
 ### OPTIONAL
 
@@ -49,7 +50,7 @@ None
 
 ## License
 
-BSD
+BSD-3-Clause
 
 ## Author Information
 
