@@ -4,6 +4,9 @@ Install the Docker engine.
 
 For information about PTA and how to use it with this Ansible role please visit https://github.com/Forcepoint/fp-pta-overview/blob/master/README.md
 
+It is assumed that the drives are already properly allocated for docker needs.
+If this needs addressing, it should be done with Packer/Terraform, not Ansible.
+
 ## Requirements
 
 None
