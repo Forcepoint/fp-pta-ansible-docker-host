@@ -10,6 +10,17 @@
     state: absent
     name: ansible
 
+- name: remove other conflicting packages
+  # Ansible is removed because it has a requirement for PyYAML, which the YUM package only does version 3.10,
+  # and the Ansible docker-service module requires >= 3.11.
+  become: yes
+  ansible.builtin.dnf:
+    state: absent
+    name:
+      - podman
+      - runc
+  when: ansible_distribution == "CentOS" and ansible_distribution_major_version > '7'
+
 - name: remove PyYAML
   become: yes
   ansible.builtin.dnf:
