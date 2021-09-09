@@ -6,32 +6,39 @@
   # Ansible is removed because it has a requirement for PyYAML, which the YUM package only does version 3.10,
   # and the Ansible docker-service module requires >= 3.11.
   become: yes
-  yum:
+  ansible.builtin.dnf:
     state: absent
     name: ansible
 
 - name: remove PyYAML
   become: yes
-  yum:
+  ansible.builtin.dnf:
     state: absent
     name: python-yaml
 
 - name: install pip PyYAML
   become: yes
-  pip:
+  ansible.builtin.pip:
     name: PyYAML
     state: latest
 
-- name: install pip docker-compose
+- name: install pip docker-compose 1.24.1
   # Version 1.25.0 doesn't install with python2.
   become: yes
-  pip:
+  ansible.builtin.pip:
     name: docker-compose==1.24.1
+  when: ansible_distribution == "CentOS" and ansible_distribution_major_version <= '7'
+
+- name: install pip docker-compose latest
+  become: yes
+  ansible.builtin.pip:
+    name: docker-compose
+  when: ansible_distribution == "CentOS" and ansible_distribution_major_version > '7'
 
 - name: disable firewalld
   # https://docs.docker.com/v1.6/installation/centos/
   become: yes
-  service:
+  ansible.builtin.service:
     name: firewalld
     state: stopped
     enabled: no
@@ -40,16 +47,16 @@
 
 - name: install docker dependencies
   become: yes
-  yum:
+  ansible.builtin.dnf:
     name:
       - yum-utils
       - device-mapper-persistent-data
       - lvm2
     state: latest
 
-- name: add docker yum repository
+- name: add docker repository
   become: yes
-  yum_repository:
+  ansible.builtin.yum_repository:
     name: docker-ce-stable
     description: public stable docker-ce repo
     baseurl: "{{ docker_host_ce_repo }}"
@@ -58,7 +65,7 @@
 
 - name: install docker-ce
   become: yes
-  yum:
+  ansible.builtin.dnf:
     name: docker-ce
     state: present
   notify:
@@ -68,20 +75,20 @@
 # https://linuxconfig.org/how-to-install-docker-in-rhel-8
 - name: install docker-ce nobest
   become: yes
-  shell: yum install --nobest docker-ce -y
+  ansible.builtin.shell: yum install --nobest docker-ce -y
   notify:
     - restart docker
   when: ansible_distribution == "CentOS" and ansible_distribution_major_version > '7'
 
 - name: ensure docker is enabled at boot
   become: yes
-  service:
+  ansible.builtin.service:
     name: docker
     enabled: yes
 
 - name: create docker group
   become: yes
-  group:
+  ansible.builtin.group:
     name: docker
     state: present
   notify:
@@ -89,7 +96,7 @@
 
 - name: add current user to docker group
   become: yes
-  user:
+  ansible.builtin.user:
     name: "{{ ansible_user_id }}"
     groups: wheel,docker
     append: yes
@@ -98,27 +105,27 @@
   #  - restart docker
 
 - name: check for config file
-  stat: path=/etc/docker/daemon.json
+  ansible.builtin.stat: path=/etc/docker/daemon.json
   register: p
 
 - name: start the service if nothing has been configured
   # If you configure docker before letting it run once, a start after configure will fail.
   become: yes
-  service:
+  ansible.builtin.service:
     name: docker
     state: started
   when: not p.stat.exists
 
 - name: create /etc/docker/
   become: yes
-  file:
+  ansible.builtin.file:
     path: /etc/docker/
     state: directory
     mode: 0755
 
 - name: configure docker
   become: yes
-  template:
+  ansible.builtin.template:
     src: templates/daemon.json.j2
     dest: /etc/docker/daemon.json
     owner: root
