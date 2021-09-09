@@ -70,15 +70,6 @@
     state: present
   notify:
     - restart docker
-  when: ansible_distribution == "CentOS" and ansible_distribution_major_version <= '7'
-
-# https://linuxconfig.org/how-to-install-docker-in-rhel-8
-- name: install docker-ce nobest
-  become: yes
-  ansible.builtin.shell: yum install --nobest docker-ce -y
-  notify:
-    - restart docker
-  when: ansible_distribution == "CentOS" and ansible_distribution_major_version > '7'
 
 - name: ensure docker is enabled at boot
   become: yes
