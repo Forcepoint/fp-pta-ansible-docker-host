@@ -95,14 +95,17 @@
     - restart docker
 
 - name: add current user to docker group
+  ansible.builtin.user:
+    name: "{{ ansible_user_id }}"
+    groups: wheel,docker
+    append: yes
+
+- name: add root user to docker group
   become: yes
   ansible.builtin.user:
     name: "{{ ansible_user_id }}"
     groups: wheel,docker
     append: yes
-  # This module is always changed. It's causing unnecessary restarts of docker.
-  #notify:
-  #  - restart docker
 
 - name: check for config file
   ansible.builtin.stat: path=/etc/docker/daemon.json
