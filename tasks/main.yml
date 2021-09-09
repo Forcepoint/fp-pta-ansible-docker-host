@@ -3,16 +3,13 @@
 # https://docs.docker.com/engine/installation/linux/docker-ce/centos/
 
 - name: remove ansible
-  # Ansible is removed because it has a requirement for PyYAML, which the YUM package only does version 3.10,
-  # and the Ansible docker-service module requires >= 3.11.
+  # Ansible is used and provided by pip, not the system package.
   become: yes
   ansible.builtin.dnf:
     state: absent
     name: ansible
 
 - name: remove other conflicting packages
-  # Ansible is removed because it has a requirement for PyYAML, which the YUM package only does version 3.10,
-  # and the Ansible docker-service module requires >= 3.11.
   become: yes
   ansible.builtin.dnf:
     state: absent
