@@ -86,6 +86,7 @@
     - restart docker
 
 - name: add current user to docker group
+  become: yes
   ansible.builtin.user:
     name: "{{ ansible_user_id }}"
     groups: wheel,docker
