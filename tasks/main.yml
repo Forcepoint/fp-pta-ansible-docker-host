@@ -41,6 +41,7 @@
 - name: install pip docker-compose latest
   ansible.builtin.pip:
     name: docker-compose
+    state: latest
     umask: "0022"
   when: ansible_distribution == "CentOS" and ansible_distribution_major_version > '7'
 
