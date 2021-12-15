@@ -38,7 +38,28 @@
     umask: "0022"
   when: ansible_distribution == "CentOS" and ansible_distribution_major_version <= '7'
 
+- name: install pip docker latest
+  ansible.builtin.pip:
+    name: docker
+    state: latest
+  when: ansible_distribution == "CentOS" and ansible_distribution_major_version > '7'
+
+- name: install pip docker latest (become)
+  become: yes
+  ansible.builtin.pip:
+    name: docker
+    state: latest
+  when: ansible_distribution == "CentOS" and ansible_distribution_major_version > '7'
+
 - name: install pip docker-compose latest
+  ansible.builtin.pip:
+    name: docker-compose
+    state: latest
+    umask: "0022"
+  when: ansible_distribution == "CentOS" and ansible_distribution_major_version > '7'
+
+- name: install pip docker-compose latest (become)
+  become: yes
   ansible.builtin.pip:
     name: docker-compose
     state: latest
